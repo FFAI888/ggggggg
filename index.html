@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多钱包登录</title>
+    <title>钱包登录</title>
     <style>
         body {
             display: flex;
@@ -14,97 +14,60 @@
             background-color: #f0f2f5;
         }
         .login-container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         button {
-            margin: 10px;
-            padding: 12px 25px;
+            padding: 12px 24px;
             font-size: 16px;
             border: none;
-            border-radius: 6px;
-            cursor: pointer;
+            border-radius: 8px;
+            background-color: #4CAF50;
             color: white;
+            cursor: pointer;
         }
-        #metamaskBtn { background-color: #f6851b; }
-        #walletConnectBtn { background-color: #3b99fc; }
-        #coinbaseBtn { background-color: #0052ff; }
-        button:hover { opacity: 0.85; }
-        .wallet-address {
+        button:hover {
+            background-color: #45a049;
+        }
+        #wallet-address {
             margin-top: 20px;
-            word-break: break-all;
             font-weight: bold;
+            color: #333;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h2>选择钱包登录</h2>
-        <button id="metamaskBtn">MetaMask</button>
-        <button id="walletConnectBtn">WalletConnect</button>
-        <button id="coinbaseBtn">Coinbase Wallet</button>
-        <div class="wallet-address" id="walletAddress"></div>
+        <h2>登录到你的钱包</h2>
+        <button id="connectWallet">连接钱包</button>
+        <div id="wallet-address"></div>
     </div>
 
-    <!-- 引入 ethers.js 和 web3modal -->
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web3modal@1.9.12/dist/index.js"></script>
-
     <script>
-        const walletAddressDiv = document.getElementById('walletAddress');
+        const connectWalletButton = document.getElementById("connectWallet");
+        const walletAddressDiv = document.getElementById("wallet-address");
 
-        // 配置 Web3Modal 支持的钱包
-        const providerOptions = {
-            walletconnect: {
-                package: window.WalletConnectProvider.default,
-                options: {
-                    infuraId: "YOUR_INFURA_PROJECT_ID" // 替换成你的 Infura 项目 ID
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const account = accounts[0];
+                    walletAddressDiv.textContent = `已连接钱包: ${account}`;
+                    connectWalletButton.textContent = "已连接";
+                    connectWalletButton.disabled = true;
+                } catch (err) {
+                    console.error(err);
+                    walletAddressDiv.textContent = "连接钱包失败，请重试。";
                 }
-            },
-            coinbasewallet: {
-                package: window.CoinbaseWalletSDK, // 需要引入 Coinbase Wallet SDK
-                options: {
-                    appName: "多钱包登录示例",
-                    infuraId: "YOUR_INFURA_PROJECT_ID",
-                }
-            }
-        };
-
-        const web3Modal = new window.Web3Modal.default({
-            cacheProvider: false,
-            providerOptions
-        });
-
-        async function connectWallet(wallet) {
-            try {
-                let provider;
-                if(wallet === 'metamask') {
-                    if (typeof window.ethereum === 'undefined') {
-                        walletAddressDiv.innerText = '未检测到 MetaMask，请安装';
-                        return;
-                    }
-                    await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    provider = new ethers.providers.Web3Provider(window.ethereum);
-                } else {
-                    provider = new ethers.providers.Web3Provider(await web3Modal.connectTo(wallet));
-                }
-
-                const signer = provider.getSigner();
-                const address = await signer.getAddress();
-                walletAddressDiv.innerText = `已连接钱包地址: ${address}`;
-            } catch (err) {
-                console.error(err);
-                walletAddressDiv.innerText = '连接失败，请重试';
+            } else {
+                walletAddressDiv.innerHTML = '请安装 <a href="https://metamask.io/" target="_blank">MetaMask</a> 扩展程序';
             }
         }
 
-        document.getElementById('metamaskBtn').addEventListener('click', () => connectWallet('metamask'));
-        document.getElementById('walletConnectBtn').addEventListener('click', () => connectWallet('walletconnect'));
-        document.getElementById('coinbaseBtn').addEventListener('click', () => connectWallet('coinbasewallet'));
+        connectWalletButton.addEventListener("click", connectWallet);
     </script>
 </body>
 </html>
